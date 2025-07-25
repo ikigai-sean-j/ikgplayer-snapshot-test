@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Iframe Host</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      iframe {
+        width: 95%;
+        height: 97dvh;
+        user-drag: none;
+        -webkit-user-drag: none;
+        /* border: 10px solid blue; */
+        display: block;
+        /* margin-block: 5vh; */
+        pointer-events: auto;
+      }
+    </style>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+  </head>
+  <body>
+    <iframe src="./?inIframe=true"></iframe>
+    <div>
+      <button onclick="setHeight(97)">Normal</button>
+      <button onclick="setHeight(80)">Compact</button>
+    </div>
+
+    <script>
+      function setHeight(height) {
+        const iframe = document.querySelector('iframe')
+        iframe.style.height = `${height}dvh`
+      }
+
+      function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search)
+        return urlParams.get(param)
+      }
+
+      const dynamicUrl = getQueryParam('url')
+      const iframe = document.querySelector('iframe')
+      if (dynamicUrl) {
+        iframe.src = dynamicUrl
+        const newUrl = window.location.origin + window.location.pathname
+        window.history.replaceState(null, '', newUrl)
+      }
+    </script>
+  </body>
+</html>
