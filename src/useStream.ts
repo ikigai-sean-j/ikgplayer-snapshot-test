@@ -36,13 +36,12 @@ enum PlayerEventType {
   SUBTITLE_DELAY_CHANGE = "subtitleDelayChange",
 }
 
-const streamUrl = "https://pull-ws-test.stream.iki-utl.cc/live/sr_hd.flv";
+const streamUrl = "https://pull-ws-test.stream.iki-utl.cc/live/sb_hd_test.flv";
 
 export default function useStream() {
   const player = useRef<IKGPlayer | null>(null);
   const [videoEl, setVideoEl] = useState<HTMLDivElement | null>(null);
   const [snapshot, setSnapshot] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
 
   const loadAndPlayVideo = (playerInstance: IKGPlayer): Promise<void> => {
@@ -66,7 +65,6 @@ export default function useStream() {
         playerInstance.on(PlayerEventType.FIRST_VIDEO_RENDERED, onFirstFrame);
         playerInstance.on(PlayerEventType.ERROR, onError);
 
-        console.log("Loading video from URL:", streamUrl);
         // Start loading and playing
         await playerInstance.load(streamUrl);
         await playerInstance.play();
@@ -77,43 +75,75 @@ export default function useStream() {
     });
   };
 
-  const run = useCallback(async (videoEl: HTMLDivElement) => {
-    player.current = initPlayerInstance(videoEl);
-    if (!player.current) throw new Error("Failed to create player instance");
+  const run = useCallback(
+    async (videoEl: HTMLDivElement) => {
+      if (isPlaying) return;
 
-    await loadAndPlayVideo(player.current);
-    setIsPlaying(true);
-  }, []);
+      if (player.current) {
+        console.log("Destroying previous player in play()");
+        stopAndDestroy(player.current);
+        player.current = null;
+      }
 
-  const cleanupPlayer = async () => {
-    const currentPlayer = player.current;
-    if (!currentPlayer) return;
+      player.current = initPlayerInstance(videoEl);
+      if (!player.current) throw new Error("Failed to create player instance");
 
-    console.log("Cleaning up player instance");
-    await currentPlayer.stop();
-    await currentPlayer.destroy();
-    player.current = null;
-    setIsPlaying(false);
+      await loadAndPlayVideo(player.current);
+      setIsPlaying(true);
+    },
+    [isPlaying]
+  );
+
+  const getSnapshot = (): string => {
+    try {
+      if (!player.current) return "";
+      const texture = player.current.snapshot("webp", 0.1);
+      return texture;
+    } catch (error) {
+      console.warn("Error getting snapshot:", error);
+      return "";
+    }
   };
 
-  useEffect(() => {
-    if (!videoEl || isLoading || isPlaying) return;
+  const stopVideoWithSnapshot = async () => {
+    setSnapshot(getSnapshot());
 
-    setIsLoading(true);
-    run(videoEl).catch((error) => {
-      console.error("Error in useStream:", error);
-      setIsPlaying(false);
-    });
-  }, [isLoading, isPlaying, run, videoEl]);
+    if (!player.current || !isPlaying) return;
+
+    try {
+      console.log("Destroying player in stopVideoWithSnapshot()");
+      stopAndDestroy(player.current);
+    } catch (error) {
+      console.error("Error stopping video:", error);
+    } finally {
+      player.current = null;
+    }
+  };
+
+  const stopAndDestroy = async (playerInstance: IKGPlayer | null) => {
+    if (!playerInstance) return;
+    setIsPlaying(false);
+    await playerInstance.stop();
+    await playerInstance.destroy();
+  };
 
   useEffect(() => {
     return () => {
       console.log("Cleaning up on unmount");
-      cleanupPlayer().catch((error) => {
+      stopAndDestroy(player.current).catch((error) => {
         console.error("Error during cleanup:", error);
       });
+      player.current = null;
     };
   }, []);
 
-  return { setVideoEl, snapshot, isPlaying };
+  return {
+    videoEl,
+    setVideoEl,
+    isPlaying,
+    run,
+    snapshot,
+    setSnapshot,
+    stopVideoWithSnapshot,
+  };
 }
