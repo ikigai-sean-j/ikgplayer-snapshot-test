@@ -1,42 +1,11 @@
-import type { AVPlayerOptions } from "@ikigaians/ikgplayer";
-import { IKGPlayerFactory, type IKGPlayer } from "@ikigaians/ikgplayer";
+import { type IKGPlayer } from "@ikigaians/ikgplayer";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const initPlayerInstance = (videoEl: HTMLDivElement) => {
-  const { origin, pathname } = window.location;
-  const options: AVPlayerOptions = {
-    wasmBaseUrl: `${origin}${pathname}libmedia/wasm`,
-    container: videoEl,
-    isLive: true,
-  };
-  return IKGPlayerFactory.create("libmedia", options);
-};
+import { initPlayerInstance } from "./streamUtils";
+import { PlayerEventType } from "./types";
 
-enum PlayerEventType {
-  LOADING = "loading",
-  LOADED = "loaded",
-  PLAYING = "playing",
-  PLAYED = "played",
-  PAUSED = "paused",
-  STOPPED = "stopped",
-  ENDED = "ended",
-  SEEKING = "seeking",
-  SEEKED = "seeked",
-  CHANGING = "changing",
-  CHANGED = "changed",
-  TIMEOUT = "timeout",
-  ERROR = "error",
-  TIME = "time",
-  RESUME = "resume",
-  FIRST_AUDIO_RENDERED = "firstAudioRendered",
-  FIRST_VIDEO_RENDERED = "firstVideoRendered",
-  STREAM_UPDATE = "streamUpdate",
-  PROGRESS = "progress",
-  VOLUME_CHANGE = "volumeChange",
-  SUBTITLE_DELAY_CHANGE = "subtitleDelayChange",
-}
-
-const streamUrl = "https://pull-ws-test.stream.iki-utl.cc/live/sb_hd_test.flv";
+// const streamUrl = "https://pull-ws-test.stream.iki-utl.cc/live/sb_hd_test.flv";
+const streamUrl = "https://pull-ws-test.stream.iki-utl.cc/live/sr_hd.flv";
 
 export default function useStream() {
   const player = useRef<IKGPlayer | null>(null);
@@ -64,6 +33,12 @@ export default function useStream() {
         // Register the listeners
         playerInstance.on(PlayerEventType.FIRST_VIDEO_RENDERED, onFirstFrame);
         playerInstance.on(PlayerEventType.ERROR, onError);
+        playerInstance.on(PlayerEventType.STOPPED, (args) => {
+          console.warn("Video stopped", args);
+        });
+        playerInstance.on(PlayerEventType.ENDED, (args) => {
+          console.warn("Video ended", args);
+        });
 
         // Start loading and playing
         await playerInstance.load(streamUrl);

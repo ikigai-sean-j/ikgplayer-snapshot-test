@@ -12,7 +12,7 @@
   "dependencies": {
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "@ikigaians/ikgplayer": "^0.8.1-alpha.2"
+    "@ikigaians/ikgplayer": "^0.9.0-alpha.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
