@@ -235,6 +235,7 @@ function App() {
       if (snapshotData) {
         setSnapshot(snapshotData);
         console.log("Snapshot taken successfully");
+        console.log(snapshotData);
       } else {
         alert("Failed to get snapshot");
       }
